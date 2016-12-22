@@ -25,10 +25,11 @@ const techs = {
         browserJs: require('enb-js/techs/browser-js'),
 
         // bemtree
-        // bemtree: require('enb-bemxjst/techs/bemtree'),
+        bemtree: require('enb-bemxjst/techs/bemtree'),
 
         // bemhtml
         bemhtml: require('enb-bemxjst/techs/bemhtml'),
+        bemtreeToBemjson: require('./techs/bemtree-to-bemjson'),
         bemjsonToHtml: require('enb-bemxjst/techs/bemjson-to-html')
     },
     enbBemTechs = require('enb-bem-techs'),
@@ -50,8 +51,8 @@ module.exports = function(config) {
         nodeConfig.addTechs([
             // essential
             [enbBemTechs.levels, { levels: levels }],
-            [techs.fileProvider, { target: '?.bemjson.js' }],
-            [enbBemTechs.bemjsonToBemdecl],
+            [techs.fileProvider, { target: '?.bemdecl.js' }],
+            [techs.fileProvider, { target: '?.data.js' }],
             [enbBemTechs.deps],
             [enbBemTechs.files],
 
@@ -63,8 +64,11 @@ module.exports = function(config) {
             }],
 
             // bemtree
-            // [techs.bemtree, { sourceSuffixes: ['bemtree', 'bemtree.js'] }],
+            [techs.bemtree, { sourceSuffixes: ['bemtree', 'bemtree.js'] }],
 
+            // bemjson
+            [techs.bemtreeToBemjson],
+            
             // bemhtml
             [techs.bemhtml, {
                 sourceSuffixes: ['bemhtml', 'bemhtml.js'],
@@ -109,6 +113,12 @@ module.exports = function(config) {
             [techs.borschik, { source: '?.css', target: '?.min.css', minify: isProd }]
         ]);
 
-        nodeConfig.addTargets([/* '?.bemtree.js', */ '?.html', '?.min.css', '?.min.js']);
+        nodeConfig.addTargets([
+            '?.bemjson.js',
+            '?.bemtree.js',
+            '?.html',
+            '?.min.css',
+            '?.min.js',
+        ]);
     });
 };
