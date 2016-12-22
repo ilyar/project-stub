@@ -12,6 +12,17 @@ const uglify = require('gulp-uglify');
 const bemhtml = require('gulp-bem-xjst').bemhtml;
 const toHtml = require('gulp-bem-xjst').toHtml;
 
+const fs = require('fs');
+const mkdirp = require('mkdirp');
+const bemtree = require('gulp-bem-xjst').bemtree;
+const dropRequireCache = require('enb/lib/fs/drop-require-cache');
+const bundleName = 'index';
+const pathToBundle = path.join('desktop.bundles', bundleName);
+const bemtreeFilename = path.resolve(pathToBundle, bundleName + '.bemtree.js');
+const bemhtmlFilename = path.resolve(pathToBundle, bundleName + '.bemhtml.js');
+const modelFilename = path.resolve('data', 'data.js');
+const outputFolder = 'output';
+
 const builder = Builder({
     levels: [
         'libs/bem-core/common.blocks',
@@ -72,6 +83,11 @@ gulp.task('build', () => {
                     .pipe(concat('any.bemhtml.js'))
                     .pipe(bemhtml())
                     .pipe(concat(bundle.name + '.bemhtml.js')),
+            bemtree: bundle =>
+                bundle.src('bemtree.js')
+                    .pipe(concat('any.bemtree.js'))
+                    .pipe(bemtree())
+                    .pipe(concat(bundle.name + '.bemtree.js')),
             html: bundle => {
                 const bemhtmlApply = () => toHtml(bundle.target('tmpls'));
                 return gulp.src(bundle.dirname + '/*.bemjson.js')
@@ -83,4 +99,31 @@ gulp.task('build', () => {
        .pipe(gulp.dest(file => path.dirname(file.path)));
 });
 
-gulp.task('default', gulp.series('build'));
+gulp.task('static', function() {
+    return gulp
+        .src('desktop.bundles/index/*.min.*')
+        .pipe(gulp.dest(outputFolder));
+});
+
+gulp.task('generate', function(done) {
+    dropRequireCache(require, bemtreeFilename);
+    dropRequireCache(require, bemhtmlFilename);
+    dropRequireCache(require, modelFilename);
+
+    const model = require(modelFilename);
+    const BEMTREE = require(bemtreeFilename);
+    const BEMHTML = require(bemhtmlFilename);
+
+    model.forEach(function(page) {
+        const pageFolder = path.join(outputFolder, page.url);
+        mkdirp.sync(pageFolder);
+        fs.writeFileSync(path.join(pageFolder, 'index.html'), BEMHTML.apply(BEMTREE.apply({
+            block: 'root',
+            data: page
+        })));
+    });
+
+    done();
+});
+
+gulp.task('default', gulp.series('build', 'generate'));
