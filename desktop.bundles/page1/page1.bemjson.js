@@ -7,5 +7,11 @@ module.exports = {
                 'content b1'
             ]
         },
+        {
+            block: 'b2',
+            content: [
+                'content b2'
+            ]
+        },
     ]
 };
